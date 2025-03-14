@@ -1,29 +1,19 @@
 // Content script that runs in the context of web pages
 // This script can interact with the web page's DOM
 
-// Function to get a random integer between min and max (inclusive)
-function getRandomInt(min, max) {
-  min = Math.ceil(min);
-  max = Math.floor(max);
-  return Math.floor(Math.random() * (max - min + 1)) + min;
-}
-
-// Audio player for OIIA sound
+// Global variables - consolidated at the top to avoid duplicate declarations
 let oiiaActive = false;
 let domObserver = null;
 let audioElement = null;
 let catInterval = null;
 let catImages = [];
 
-// Array of cat image URLs
-const catImageUrls = [
-  'https://cataas.com/cat/gif',
-  'https://cataas.com/cat/cute',
-  'https://cataas.com/cat/says/OIIA',
-  'https://cataas.com/cat/cute/says/Dance',
-  'https://cataas.com/cat/gif/says/Party',
-  'https://cataas.com/cat'
-];
+// Function to get a random integer between min and max (inclusive)
+function getRandomInt(min, max) {
+  min = Math.ceil(min);
+  max = Math.floor(max);
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
 
 // Function to create and play the OIIA audio
 function playOiiaAudio() {
@@ -643,16 +633,29 @@ function addRandomCat() {
     catImage.style.left = `${left}px`;
     catImage.style.top = `${top}px`;
     
-    // Set a random cat image URL with error handling
-    const randomIndex = Math.floor(Math.random() * catImageUrls.length);
-    const randomParam = Math.floor(Math.random() * 10000); // Add random param to avoid caching
-    catImage.src = catImageUrls[randomIndex] + '?random=' + randomParam;
+    // Try to get the OIIA image URL with error handling
+    let imageUrl = '';
+    try {
+      imageUrl = chrome.runtime.getURL('public/oiia.png');
+    } catch (runtimeError) {
+      console.warn('OIIA: Chrome runtime error, using fallback image path', runtimeError);
+      // Fallback to a relative path if chrome.runtime is unavailable
+      imageUrl = 'public/oiia.png';
+    }
+    
+    catImage.src = imageUrl;
     
     // Add error handling for the image
     catImage.onerror = function() {
-      console.log('OIIA: Error loading cat image, using fallback');
-      // Use a fallback image if the cat API fails
-      catImage.src = 'https://placekitten.com/200/200?random=' + randomParam;
+      console.log('OIIA: Error loading image, removing cat');
+      if (catImage.parentNode) {
+        catImage.parentNode.removeChild(catImage);
+      }
+      // Remove from the array
+      const index = catImages.indexOf(catImage);
+      if (index > -1) {
+        catImages.splice(index, 1);
+      }
     };
     
     // Add to the document
@@ -661,11 +664,11 @@ function addRandomCat() {
     // Store the cat image reference
     catImages.push(catImage);
     
-    console.log('OIIA: Added a random cat image');
+    console.log('OIIA: Added a random OIIA image');
     
     return catImage;
   } catch (error) {
-    console.error('OIIA: Error adding cat image:', error);
+    console.error('OIIA: Error adding OIIA image:', error);
     return null;
   }
 }
@@ -824,20 +827,19 @@ function setupDynamicElementObserver() {
                 if (style.display !== 'none' && style.visibility !== 'hidden' && style.opacity !== '0') {
                   // Apply rotation directly
                   node.setAttribute('data-oiia-processed', 'true');
-                  // For headings, prioritize the full 3D random rotation
-                  const rotationType = getRandomInt(1, 2) === 1 ? 4 : getRandomInt(1, 3);
+                  // For headings, prioritize the full 3D random rotation for more dramatic effect
+                  const rotationType = getRandomInt(1, 4);
                   switch (rotationType) {
                     case 1:
-                      node.classList.add('oiia-text-rotate-x');
-                      break;
                     case 2:
-                      node.classList.add('oiia-text-rotate-y');
+                      // Higher chance of full 3D rotation for headings
+                      node.classList.add('oiia-text-rotate');
                       break;
                     case 3:
-                      node.classList.add('oiia-text-rotate-z');
+                      node.classList.add('oiia-text-rotate-x');
                       break;
                     case 4:
-                      node.classList.add('oiia-text-rotate');
+                      node.classList.add('oiia-text-rotate-z');
                       break;
                   }
                   toggleTextRotation(node);
@@ -1301,7 +1303,7 @@ function disableOIIA() {
   // Set the global flag to indicate OIIA mode is inactive
   oiiaActive = false;
   
-  // Disconnect the MutationObserver
+  // Disconnect the observer if it exists
   if (domObserver) {
     domObserver.disconnect();
     domObserver = null;
@@ -1457,8 +1459,15 @@ function processImage(imgElement) {
     const originalSrc = imgElement.src || '';
     const originalSrcset = imgElement.srcset || '';
     
-    // Get the URL for the OIIA image
-    const oiiaImageUrl = chrome.runtime.getURL('public/oiia.png');
+    // Try to get the OIIA image URL with error handling
+    let oiiaImageUrl = '';
+    try {
+      oiiaImageUrl = chrome.runtime.getURL('public/oiia.png');
+    } catch (runtimeError) {
+      console.warn('OIIA: Chrome runtime error, using fallback image path', runtimeError);
+      // Fallback to a relative path if chrome.runtime is unavailable
+      oiiaImageUrl = 'public/oiia.png';
+    }
     
     // Change the image source
     imgElement.src = oiiaImageUrl;
@@ -1520,7 +1529,18 @@ function processVideoOrIframe(element) {
   
   // Create the OIIA image
   const imgElement = document.createElement('img');
-  imgElement.src = chrome.runtime.getURL('public/oiia.png');
+  
+  // Try to get the OIIA image URL with error handling
+  let oiiaImageUrl = '';
+  try {
+    oiiaImageUrl = chrome.runtime.getURL('public/oiia.png');
+  } catch (runtimeError) {
+    console.warn('OIIA: Chrome runtime error, using fallback image path', runtimeError);
+    // Fallback to a relative path if chrome.runtime is unavailable
+    oiiaImageUrl = 'public/oiia.png';
+  }
+  
+  imgElement.src = oiiaImageUrl;
   imgElement.style.maxWidth = '80%';
   imgElement.style.maxHeight = '80%';
   imgElement.alt = 'OIIA';
@@ -1581,7 +1601,18 @@ function processSvgElement(svgElement) {
   
   // Create an image element
   const imgElement = document.createElement('img');
-  imgElement.src = chrome.runtime.getURL('public/oiia.png');
+  
+  // Try to get the OIIA image URL with error handling
+  let oiiaImageUrl = '';
+  try {
+    oiiaImageUrl = chrome.runtime.getURL('public/oiia.png');
+  } catch (runtimeError) {
+    console.warn('OIIA: Chrome runtime error, using fallback image path', runtimeError);
+    // Fallback to a relative path if chrome.runtime is unavailable
+    oiiaImageUrl = 'public/oiia.png';
+  }
+  
+  imgElement.src = oiiaImageUrl;
   imgElement.style.maxWidth = '100%';
   imgElement.style.height = 'auto';
   imgElement.alt = 'OIIA';
@@ -1599,8 +1630,13 @@ function processSvgElement(svgElement) {
       const parent = svgElement.parentNode;
       if (parent && parent.tagName.toLowerCase() !== 'svg') {
         // If parent is not an SVG, we can replace it
-        parent.insertBefore(container, svgElement);
-        svgElement.style.display = 'none';
+        parent.replaceChild(container, svgElement);
+      } else {
+        // Otherwise, just hide it and place our image on top
+        svgElement.style.visibility = 'hidden';
+        if (parent) {
+          parent.insertBefore(container, svgElement);
+        }
       }
     }
     
@@ -1609,14 +1645,14 @@ function processSvgElement(svgElement) {
     
     return true;
   } catch (e) {
-    console.error('Could not replace SVG element:', e);
+    console.error('Error processing SVG element:', e);
     return false;
   }
 }
 
 // Function to process an element with a background image
 function processBackgroundImage(element) {
-  // Skip if already processed
+  // Skip if this element has already been processed
   if (element.getAttribute('data-oiia-processed') === 'true') {
     return false;
   }
@@ -1625,259 +1661,38 @@ function processBackgroundImage(element) {
   element.setAttribute('data-oiia-processed', 'true');
   
   try {
-    // Get computed style to ensure we capture the actual background
-    const computedStyle = window.getComputedStyle(element);
+    // Get the computed style
+    const style = window.getComputedStyle(element);
+    const backgroundImage = style.backgroundImage;
     
-    // Save original background properties
-    const originalBackground = element.style.background || '';
-    const originalBackgroundImage = element.style.backgroundImage || '';
-    const originalBackgroundColor = element.style.backgroundColor || '';
-    
-    // Store original values for potential restoration
-    element.setAttribute('data-original-background', originalBackground);
-    element.setAttribute('data-original-background-image', originalBackgroundImage);
-    element.setAttribute('data-original-background-color', originalBackgroundColor);
-    element.setAttribute('data-computed-background-image', computedStyle.backgroundImage);
-    
-    // Create a container if needed
-    let container = element;
-    
-    // If the element has children, create a relative container
-    if (element.children.length > 0 && computedStyle.position === 'static') {
-      element.style.position = 'relative';
+    // Skip if there's no background image or it's already an OIIA image
+    if (!backgroundImage || backgroundImage === 'none' || backgroundImage.includes('oiia.png')) {
+      return false;
     }
     
-    // Create an overlay with the OIIA image
-    const overlay = document.createElement('div');
-    overlay.style.position = 'absolute';
-    overlay.style.top = '0';
-    overlay.style.left = '0';
-    overlay.style.width = '100%';
-    overlay.style.height = '100%';
-    overlay.style.display = 'flex';
-    overlay.style.justifyContent = 'center';
-    overlay.style.alignItems = 'center';
-    overlay.style.backgroundColor = 'rgba(0, 0, 0, 0.7)';
-    overlay.style.zIndex = '9999';
-    overlay.classList.add('oiia-background-overlay');
+    // Store the original background image
+    element.setAttribute('data-original-background-image', backgroundImage);
     
-    // Create the OIIA image
-    const imgElement = document.createElement('img');
-    imgElement.src = chrome.runtime.getURL('public/oiia.png');
-    imgElement.style.maxWidth = '80%';
-    imgElement.style.maxHeight = '80%';
-    imgElement.alt = 'OIIA';
-    imgElement.className = 'oiia-image';
+    // Set the new background image
+    const oiiaImageUrl = chrome.runtime.getURL('public/oiia.png');
+    element.style.backgroundImage = `url("${oiiaImageUrl}")`;
     
-    // Add the image to the overlay
-    overlay.appendChild(imgElement);
+    // Adjust background properties for better display
+    element.style.backgroundSize = 'contain';
+    element.style.backgroundRepeat = 'no-repeat';
+    element.style.backgroundPosition = 'center';
     
-    // Add the overlay to the container
-    container.appendChild(overlay);
+    // Add a class for potential additional styling
+    element.classList.add('oiia-background');
     
-    // Remove all background images
-    element.style.backgroundImage = 'none';
-    
-    // If background shorthand is used, we need to preserve color but remove image
-    if (computedStyle.background.includes('url(')) {
-      // Extract background color if present
-      const bgColor = computedStyle.backgroundColor;
-      if (bgColor && bgColor !== 'rgba(0, 0, 0, 0)' && bgColor !== 'transparent') {
-        element.style.background = bgColor;
-      } else {
-        element.style.background = 'none';
-      }
-    }
-    
-    // Start the random rotation toggle for this image
-    toggleRotation(imgElement);
+    // Start the random rotation toggle for this element
+    toggleRotation(element);
     
     return true;
   } catch (e) {
     console.error('Error processing background image:', e);
     return false;
   }
-}
-
-// Function to set up the MutationObserver to catch dynamically loaded elements
-function setupDynamicElementObserver() {
-  // If observer already exists, disconnect it first
-  if (domObserver) {
-    domObserver.disconnect();
-  }
-  
-  // Create a new observer
-  domObserver = new MutationObserver((mutations) => {
-    // Only process if OIIA mode is active
-    if (!oiiaActive) return;
-    
-    let newElements = [];
-    let elementsToRecheck = new Set();
-    
-    // Check each mutation
-    mutations.forEach(mutation => {
-      // If nodes were added
-      if (mutation.type === 'childList') {
-        // Check each added node
-        mutation.addedNodes.forEach(node => {
-          // If it's an element node
-          if (node.nodeType === Node.ELEMENT_NODE) {
-            // If it's an image, video, iframe, or SVG
-            if (node.tagName && ['IMG', 'VIDEO', 'IFRAME', 'SVG'].includes(node.tagName.toUpperCase())) {
-              if (!node.getAttribute('data-oiia-processed')) {
-                newElements.push(node);
-              }
-            }
-            
-            // If it's a heading element
-            if (node.tagName && ['H1', 'H2', 'H3', 'H4', 'H5', 'H6'].includes(node.tagName.toUpperCase())) {
-              if (!node.getAttribute('data-oiia-processed')) {
-                const style = window.getComputedStyle(node);
-                if (style.display !== 'none' && style.visibility !== 'hidden' && style.opacity !== '0') {
-                  // Apply rotation directly
-                  node.setAttribute('data-oiia-processed', 'true');
-                  // For headings, prioritize the full 3D random rotation
-                  const rotationType = getRandomInt(1, 2) === 1 ? 4 : getRandomInt(1, 3);
-                  switch (rotationType) {
-                    case 1:
-                      node.classList.add('oiia-text-rotate-x');
-                      break;
-                    case 2:
-                      node.classList.add('oiia-text-rotate-y');
-                      break;
-                    case 3:
-                      node.classList.add('oiia-text-rotate-z');
-                      break;
-                    case 4:
-                      node.classList.add('oiia-text-rotate');
-                      break;
-                  }
-                  toggleTextRotation(node);
-                }
-              }
-            }
-            
-            // If it's a link or button without children
-            if (node.tagName && ['A', 'BUTTON'].includes(node.tagName.toUpperCase())) {
-              let hasOnlyTextNodes = true;
-              for (const child of node.childNodes) {
-                if (child.nodeType === Node.ELEMENT_NODE) {
-                  hasOnlyTextNodes = false;
-                  break;
-                }
-              }
-              
-              if (hasOnlyTextNodes && node.textContent.trim().length > 0 && !node.getAttribute('data-oiia-processed')) {
-                const style = window.getComputedStyle(node);
-                if (style.display !== 'none' && style.visibility !== 'hidden' && style.opacity !== '0') {
-                  // Apply rotation directly
-                  node.setAttribute('data-oiia-processed', 'true');
-                  const rotationType = getRandomInt(1, 4);
-                  switch (rotationType) {
-                    case 1:
-                      node.classList.add('oiia-text-rotate-x');
-                      break;
-                    case 2:
-                      node.classList.add('oiia-text-rotate-y');
-                      break;
-                    case 3:
-                      node.classList.add('oiia-text-rotate-z');
-                      break;
-                    case 4:
-                      node.classList.add('oiia-text-rotate');
-                      break;
-                  }
-                  toggleTextRotation(node);
-                }
-              }
-            }
-            
-            // Also check for images, videos, iframes, and SVGs inside the added node
-            try {
-              const innerElements = node.querySelectorAll('img, [loading="lazy"][src], [aria-hidden="true"][src], video, iframe, svg, use, symbol, path, object[type="image/svg+xml"], embed[type="image/svg+xml"]');
-              innerElements.forEach(el => {
-                if (!el.getAttribute('data-oiia-processed')) {
-                  newElements.push(el);
-                }
-              });
-            } catch (e) {
-              console.error('Error querying inner elements:', e);
-            }
-            
-            // Check for elements with background images
-            try {
-              // Check the node itself for background images
-              checkAndAddElementWithBackgroundImage(node, newElements);
-              
-              // Check all descendants for background images
-              const allDescendants = node.querySelectorAll('*');
-              allDescendants.forEach(descendant => {
-                checkAndAddElementWithBackgroundImage(descendant, newElements);
-              });
-            } catch (e) {
-              console.error('Error checking for background images:', e);
-            }
-          }
-        });
-      }
-      
-      // If attributes changed (could affect src, srcset, style, etc.)
-      if (mutation.type === 'attributes') {
-        const target = mutation.target;
-        
-        // Skip if already processed
-        if (target.getAttribute('data-oiia-processed') === 'true') {
-          return;
-        }
-        
-        // If src or srcset attribute changed on an image
-        if ((mutation.attributeName === 'src' || mutation.attributeName === 'srcset') && 
-            target.tagName && target.tagName.toUpperCase() === 'IMG') {
-          newElements.push(target);
-        }
-        
-        // If style attribute changed, check for background images
-        if (mutation.attributeName === 'style' || mutation.attributeName === 'class') {
-          elementsToRecheck.add(target);
-        }
-        
-        // If loading attribute was added (lazy loading)
-        if (mutation.attributeName === 'loading' && target.hasAttribute('src')) {
-          newElements.push(target);
-        }
-      }
-    });
-    
-    // Process elements that had style or class changes to check for new background images
-    if (elementsToRecheck.size > 0) {
-      elementsToRecheck.forEach(element => {
-        checkAndAddElementWithBackgroundImage(element, newElements);
-      });
-    }
-    
-    // If we found new elements, process them
-    if (newElements.length > 0) {
-      console.log(`OIIA: Found ${newElements.length} new elements to process`);
-      processNewElements(newElements);
-    }
-  });
-  
-  // Start observing the entire document with all possible options
-  domObserver.observe(document.documentElement, {
-    childList: true,     // Watch for added/removed elements
-    subtree: true,       // Watch the entire DOM tree
-    attributes: true,    // Watch for attribute changes
-    attributeFilter: ['src', 'srcset', 'style', 'class', 'loading', 'background', 'background-image'] // Only specific attributes
-  });
-  
-  // Also set up a periodic check for any elements that might have been missed
-  setInterval(() => {
-    if (oiiaActive) {
-      performFullPageScan();
-    }
-  }, 2000); // Check every 2 seconds
-  
-  console.log('OIIA: Dynamic element observer set up');
 }
 
 // Function to restore the original state of the page
@@ -1900,52 +1715,129 @@ function restoreOriginalState() {
   stopCatImageInterval();
   
   // Remove the strobing gradient background from the body
-  removeBodyEffect();
+  document.body.classList.remove('oiia-body-effect');
+  
+  // Restore original backgrounds
+  document.querySelectorAll('[data-original-background], [data-original-background-image], [data-computed-background-image]').forEach(element => {
+    try {
+      // If we have the computed background image, use that for restoration
+      if (element.hasAttribute('data-computed-background-image') && 
+          element.getAttribute('data-computed-background-image') !== 'none') {
+        element.style.backgroundImage = element.getAttribute('data-computed-background-image');
+      }
+      
+      // If we have the original background, restore that
+      if (element.hasAttribute('data-original-background') && 
+          element.getAttribute('data-original-background')) {
+        element.style.background = element.getAttribute('data-original-background');
+      }
+      
+      // If we have the original background image, restore that
+      if (element.hasAttribute('data-original-background-image') && 
+          element.getAttribute('data-original-background-image')) {
+        element.style.backgroundImage = element.getAttribute('data-original-background-image');
+      }
+      
+      // Remove all data attributes
+      element.removeAttribute('data-original-background');
+      element.removeAttribute('data-original-background-image');
+      element.removeAttribute('data-original-background-color');
+      element.removeAttribute('data-computed-background-image');
+    } catch (e) {
+      console.error('Error restoring background:', e);
+    }
+  });
+  
+  // Remove background overlays
+  document.querySelectorAll('.oiia-background-overlay').forEach(overlay => {
+    overlay.remove();
+  });
+  
+  // Restore original images
+  document.querySelectorAll('.oiia-image').forEach(img => {
+    if (img.hasAttribute('data-original-src')) {
+      img.src = img.getAttribute('data-original-src');
+      img.removeAttribute('data-original-src');
+    }
+    if (img.hasAttribute('data-original-srcset')) {
+      img.srcset = img.getAttribute('data-original-srcset');
+      img.removeAttribute('data-original-srcset');
+    }
+    if (img.hasAttribute('data-original-sizes')) {
+      img.sizes = img.getAttribute('data-original-sizes');
+      img.removeAttribute('data-original-sizes');
+    }
+    img.classList.remove('oiia-image');
+    img.classList.remove('oiia-rotate');
+  });
+  
+  // Remove data-oiia-processed attributes
+  document.querySelectorAll('[data-oiia-processed]').forEach(element => {
+    element.removeAttribute('data-oiia-processed');
+  });
+  
+  // Remove video overlays
+  document.querySelectorAll('.oiia-video-container').forEach(container => {
+    const video = container.querySelector('video, iframe');
+    if (video) {
+      container.parentNode.insertBefore(video, container);
+      container.remove();
+    }
+  });
+  
+  // Remove text rotation
+  document.querySelectorAll('.oiia-text-rotate, .oiia-text-rotate-x, .oiia-text-rotate-y, .oiia-text-rotate-z').forEach(element => {
+    element.classList.remove('oiia-text-rotate');
+    element.classList.remove('oiia-text-rotate-x');
+    element.classList.remove('oiia-text-rotate-y');
+    element.classList.remove('oiia-text-rotate-z');
+    if (element.oiiaTextTimeouts) {
+      element.oiiaTextTimeouts.forEach(timeoutId => {
+        clearTimeout(timeoutId);
+      });
+      delete element.oiiaTextTimeouts;
+    }
+  });
   
   // Restore rgba backgrounds
   restoreRgbaBackgrounds();
   
-  // Get all elements with our classes
-  const oiiaElements = document.querySelectorAll('.oiia-image, .oiia-video, .oiia-svg, [data-oiia-processed="true"], .oiia-text-rotate, .oiia-text-rotate-x, .oiia-text-rotate-y, .oiia-text-rotate-z');
-  
-  // For each element, restore the original state
-  for (const element of oiiaElements) {
-    // Remove our classes
-    element.classList.remove('oiia-image', 'oiia-video', 'oiia-svg', 'oiia-text-rotate', 'oiia-text-rotate-x', 'oiia-text-rotate-y', 'oiia-text-rotate-z');
-    
-    // Remove our data attribute
-    element.removeAttribute('data-oiia-processed');
-    
-    // If we saved the original src, restore it
-    if (element.hasAttribute('data-oiia-original-src')) {
-      element.src = element.getAttribute('data-oiia-original-src');
-      element.removeAttribute('data-oiia-original-src');
-    }
-    
-    // If we saved the original srcset, restore it
-    if (element.hasAttribute('data-oiia-original-srcset')) {
-      element.srcset = element.getAttribute('data-oiia-original-srcset');
-      element.removeAttribute('data-oiia-original-srcset');
-    }
-    
-    // If we saved the original background image, restore it
-    if (element.hasAttribute('data-oiia-original-background')) {
-      element.style.backgroundImage = element.getAttribute('data-oiia-original-background');
-      element.removeAttribute('data-oiia-original-background');
-    }
-    
-    // If we saved the original style, restore it
-    if (element.hasAttribute('data-oiia-original-style')) {
-      element.setAttribute('style', element.getAttribute('data-oiia-original-style'));
-      element.removeAttribute('data-oiia-original-style');
-    }
-  }
-  
-  // Remove our style element
-  const styleElement = document.getElementById('oiia-styles');
-  if (styleElement) {
-    styleElement.remove();
-  }
-  
-  console.log('OIIA: Original state restored');
+  console.log('OIIA mode disabled');
 }
+
+// Listen for messages from the popup
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  if (message.action === 'replaceWithOIIA') {
+    // Replace elements with OIIA images
+    const numReplaced = replaceElementsWithOIIA();
+    
+    // Send response back to the popup
+    sendResponse({ success: true, numReplaced: numReplaced });
+  } else if (message.action === 'disableOIIA') {
+    // Disable OIIA mode
+    disableOIIA();
+    
+    // Send response back to the popup
+    sendResponse({ success: true });
+  } else if (message.action === 'toggleTextRotation') {
+    // Toggle text rotation for elements containing the specified text
+    if (message.text) {
+      const textElements = findAllTextElements();
+      let found = false;
+      
+      for (const element of textElements) {
+        if (element.textContent.includes(message.text)) {
+          manualToggleTextRotation(element);
+          found = true;
+        }
+      }
+      
+      sendResponse({ success: true, found: found });
+    } else {
+      sendResponse({ success: false, error: 'No text specified' });
+    }
+  }
+  
+  // Return true to indicate that the response will be sent asynchronously
+  return true;
+});
