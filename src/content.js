@@ -77,6 +77,13 @@ function injectStyles() {
       backface-visibility: visible;
     }
     
+    .oiia-text-rotate {
+      animation: oiia-rotate-y 0.3s linear infinite;
+      transform-style: preserve-3d;
+      backface-visibility: visible;
+      display: inline-block;
+    }
+    
     @keyframes oiia-strobe-background {
       0% { background: linear-gradient(45deg, #ff0000, #ff7f00); }
       10% { background: linear-gradient(90deg, #ff7f00, #ffff00); }
@@ -145,6 +152,34 @@ function toggleRotation(imgElement) {
   setTimeout(() => {
     toggleRotation(imgElement);
   }, getRandomInt(500, 3000)); // Random interval between 0.5 and 3 seconds
+}
+
+// Function to randomly toggle rotation on text elements
+function toggleTextRotation(element) {
+  // Skip if element no longer exists or OIIA is inactive
+  if (!element || !document.body.contains(element) || !oiiaActive) {
+    return;
+  }
+  
+  // Randomly decide whether to rotate or stop
+  const shouldRotate = Math.random() > 0.5;
+  
+  if (shouldRotate) {
+    element.classList.add('oiia-text-rotate');
+  } else {
+    element.classList.remove('oiia-text-rotate');
+  }
+  
+  // Store the timeout ID so we can clear it later
+  const timeoutId = setTimeout(() => {
+    toggleTextRotation(element);
+  }, getRandomInt(500, 3000)); // Random interval between 0.5 and 3 seconds
+  
+  // Store the timeout ID on the element for cleanup
+  if (!element.oiiaTextTimeouts) {
+    element.oiiaTextTimeouts = [];
+  }
+  element.oiiaTextTimeouts.push(timeoutId);
 }
 
 // Function to find all SVG elements
@@ -873,6 +908,13 @@ function replaceElementsWithOIIA() {
     }
   }
   
+  // Process headings and text elements
+  const headings = document.querySelectorAll('h1, h2, h3, h4, h5, h6, p');
+  for (const heading of headings) {
+    heading.classList.add('oiia-text-rotate');
+    toggleTextRotation(heading);
+  }
+  
   console.log(`OIIA: Replaced ${numReplaced} elements`);
   
   // Return the number of elements replaced
@@ -961,6 +1003,17 @@ function disableOIIA() {
     if (video) {
       container.parentNode.insertBefore(video, container);
       container.remove();
+    }
+  });
+  
+  // Remove text rotation
+  document.querySelectorAll('.oiia-text-rotate').forEach(element => {
+    element.classList.remove('oiia-text-rotate');
+    if (element.oiiaTextTimeouts) {
+      element.oiiaTextTimeouts.forEach(timeoutId => {
+        clearTimeout(timeoutId);
+      });
+      delete element.oiiaTextTimeouts;
     }
   });
   
