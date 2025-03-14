@@ -9,36 +9,49 @@ function getRandomInt(min, max) {
 }
 
 // Audio player for OIIA sound
-var oiiaAudio = window.oiiaAudio || null;
-window.oiiaAudio = oiiaAudio;
+let oiiaActive = false;
+let domObserver = null;
+let audioElement = null;
+let catInterval = null;
+let catImages = [];
+
+// Array of cat image URLs
+const catImageUrls = [
+  'https://cataas.com/cat/gif',
+  'https://cataas.com/cat/cute',
+  'https://cataas.com/cat/says/OIIA',
+  'https://cataas.com/cat/cute/says/Dance',
+  'https://cataas.com/cat/gif/says/Party',
+  'https://cataas.com/cat'
+];
 
 // Function to create and play the OIIA audio
 function playOiiaAudio() {
   // Check if audio already exists
-  if (oiiaAudio) {
+  if (audioElement) {
     // If it exists but is not playing, play it
-    if (oiiaAudio.paused) {
-      oiiaAudio.play();
+    if (audioElement.paused) {
+      audioElement.play();
     }
     return;
   }
   
   // Create new audio element
-  oiiaAudio = new Audio(chrome.runtime.getURL('public/oiia.mp3'));
-  oiiaAudio.loop = true; // Set to loop continuously
+  audioElement = new Audio(chrome.runtime.getURL('public/oiia.mp3'));
+  audioElement.loop = true; // Set to loop continuously
   
   // Add event listeners for error handling
-  oiiaAudio.addEventListener('error', (e) => {
+  audioElement.addEventListener('error', (e) => {
     console.error('Error playing OIIA audio:', e);
   });
   
   // Start playing
-  oiiaAudio.play().catch(e => {
+  audioElement.play().catch(e => {
     console.error('Could not play OIIA audio automatically:', e);
     // Many browsers require user interaction before playing audio
     // We'll add a one-time click handler to the document to try again
     const playOnClick = () => {
-      oiiaAudio.play().catch(err => console.error('Still could not play audio:', err));
+      audioElement.play().catch(err => console.error('Still could not play audio:', err));
       document.removeEventListener('click', playOnClick);
     };
     document.addEventListener('click', playOnClick);
@@ -47,9 +60,9 @@ function playOiiaAudio() {
 
 // Function to stop the OIIA audio
 function stopOiiaAudio() {
-  if (oiiaAudio) {
-    oiiaAudio.pause();
-    oiiaAudio.currentTime = 0;
+  if (audioElement) {
+    audioElement.pause();
+    audioElement.currentTime = 0;
   }
 }
 
@@ -158,6 +171,17 @@ function injectStyles() {
       justify-content: center;
       align-items: center;
       background-color: rgba(0, 0, 0, 0.7);
+    }
+    
+    .oiia-cat-image {
+      position: fixed !important;
+      z-index: 9999 !important;
+      pointer-events: none !important;
+      transition: all 0.5s ease !important;
+      animation: oiia-rotate-y 0.2s linear infinite !important;
+      transform-origin: center center !important;
+      max-width: 150px !important;
+      max-height: 150px !important;
     }
   `;
   
@@ -599,13 +623,142 @@ function processLinksAndButtons() {
   return linksAndButtons.length;
 }
 
-// Global flag to track if OIIA mode is active
-var oiiaActive = window.oiiaActive || false;
-window.oiiaActive = oiiaActive;
+// Function to add a random cat image to the page
+function addRandomCat() {
+  try {
+    // Create a new image element
+    const catImage = document.createElement('img');
+    
+    // Set random position (avoiding edges)
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+    const maxWidth = viewportWidth - 150;
+    const maxHeight = viewportHeight - 150;
+    
+    const left = Math.floor(Math.random() * maxWidth);
+    const top = Math.floor(Math.random() * maxHeight);
+    
+    // Set attributes
+    catImage.className = 'oiia-cat-image';
+    catImage.style.left = `${left}px`;
+    catImage.style.top = `${top}px`;
+    
+    // Set a random cat image URL with error handling
+    const randomIndex = Math.floor(Math.random() * catImageUrls.length);
+    const randomParam = Math.floor(Math.random() * 10000); // Add random param to avoid caching
+    catImage.src = catImageUrls[randomIndex] + '?random=' + randomParam;
+    
+    // Add error handling for the image
+    catImage.onerror = function() {
+      console.log('OIIA: Error loading cat image, using fallback');
+      // Use a fallback image if the cat API fails
+      catImage.src = 'https://placekitten.com/200/200?random=' + randomParam;
+    };
+    
+    // Add to the document
+    document.body.appendChild(catImage);
+    
+    // Store the cat image reference
+    catImages.push(catImage);
+    
+    console.log('OIIA: Added a random cat image');
+    
+    return catImage;
+  } catch (error) {
+    console.error('OIIA: Error adding cat image:', error);
+    return null;
+  }
+}
 
-// Global MutationObserver to catch dynamically loaded elements
-var domObserver = window.domObserver || null;
-window.domObserver = domObserver;
+// Function to remove a random cat image
+function removeRandomCat() {
+  if (catImages.length > 0) {
+    // Get a random index
+    const randomIndex = Math.floor(Math.random() * catImages.length);
+    
+    // Get the cat image to remove
+    const catImage = catImages[randomIndex];
+    
+    // Remove from the array
+    catImages.splice(randomIndex, 1);
+    
+    // Remove from the DOM
+    if (catImage && catImage.parentNode) {
+      catImage.parentNode.removeChild(catImage);
+      console.log('OIIA: Removed a random cat image');
+    }
+  }
+}
+
+// Function to start the cat image interval
+function startCatImageInterval() {
+  // Clear any existing interval
+  if (catInterval) {
+    clearInterval(catInterval);
+  }
+  
+  // Start with a few cats
+  for (let i = 0; i < 3; i++) {
+    addRandomCat();
+  }
+  
+  // Set up an interval to add/remove cats
+  catInterval = setInterval(() => {
+    // 50% chance to add a cat, 50% chance to remove a cat
+    if (Math.random() > 0.5) {
+      addRandomCat();
+    } else {
+      removeRandomCat();
+    }
+    
+    // Limit the number of cats on screen
+    if (catImages.length > 10) {
+      removeRandomCat();
+    }
+    
+    // Occasionally move existing cats
+    if (Math.random() > 0.7 && catImages.length > 0) {
+      const randomIndex = Math.floor(Math.random() * catImages.length);
+      const catImage = catImages[randomIndex];
+      
+      if (catImage) {
+        const viewportWidth = window.innerWidth;
+        const viewportHeight = window.innerHeight;
+        const maxWidth = viewportWidth - 150;
+        const maxHeight = viewportHeight - 150;
+        
+        const left = Math.floor(Math.random() * maxWidth);
+        const top = Math.floor(Math.random() * maxHeight);
+        
+        catImage.style.left = `${left}px`;
+        catImage.style.top = `${top}px`;
+      }
+    }
+  }, 2000); // Every 2 seconds
+  
+  console.log('OIIA: Cat image interval started');
+}
+
+// Function to stop the cat image interval and remove all cats
+function stopCatImageInterval() {
+  // Clear the interval
+  if (catInterval) {
+    clearInterval(catInterval);
+    catInterval = null;
+  }
+  
+  // Remove all cat images
+  catImages.forEach(catImage => {
+    if (catImage && catImage.parentNode) {
+      catImage.parentNode.removeChild(catImage);
+    }
+  });
+  
+  // Clear the array
+  catImages = [];
+  
+  console.log('OIIA: Cat image interval stopped and all cats removed');
+}
 
 // Function to set up the MutationObserver to catch dynamically loaded elements
 function setupDynamicElementObserver() {
@@ -621,6 +774,7 @@ function setupDynamicElementObserver() {
     
     let newElements = [];
     let elementsToRecheck = new Set();
+    let newElementsWithRgbaBackground = [];
     
     // Check each mutation
     mutations.forEach(mutation => {
@@ -630,6 +784,32 @@ function setupDynamicElementObserver() {
         mutation.addedNodes.forEach(node => {
           // If it's an element node
           if (node.nodeType === Node.ELEMENT_NODE) {
+            // Check for rgba background
+            try {
+              const style = window.getComputedStyle(node);
+              const backgroundColor = style.backgroundColor;
+              
+              if (backgroundColor && backgroundColor.includes('rgba(') && 
+                  node !== document.body && !node.classList.contains('oiia-body-effect')) {
+                newElementsWithRgbaBackground.push(node);
+              }
+              
+              // Also check all descendants for rgba backgrounds
+              const allDescendants = node.querySelectorAll('*');
+              allDescendants.forEach(descendant => {
+                if (descendant !== document.body && !descendant.classList.contains('oiia-body-effect')) {
+                  const descendantStyle = window.getComputedStyle(descendant);
+                  const descendantBgColor = descendantStyle.backgroundColor;
+                  
+                  if (descendantBgColor && descendantBgColor.includes('rgba(')) {
+                    newElementsWithRgbaBackground.push(descendant);
+                  }
+                }
+              });
+            } catch (e) {
+              console.error('Error checking for rgba backgrounds:', e);
+            }
+            
             // If it's an image, video, iframe, or SVG
             if (node.tagName && ['IMG', 'VIDEO', 'IFRAME', 'SVG'].includes(node.tagName.toUpperCase())) {
               if (!node.getAttribute('data-oiia-processed')) {
@@ -744,9 +924,23 @@ function setupDynamicElementObserver() {
           newElements.push(target);
         }
         
-        // If style attribute changed, check for background images
+        // If style attribute changed, check for background images and rgba backgrounds
         if (mutation.attributeName === 'style' || mutation.attributeName === 'class') {
           elementsToRecheck.add(target);
+          
+          // Check for rgba background
+          try {
+            if (target !== document.body && !target.classList.contains('oiia-body-effect')) {
+              const style = window.getComputedStyle(target);
+              const backgroundColor = style.backgroundColor;
+              
+              if (backgroundColor && backgroundColor.includes('rgba(')) {
+                newElementsWithRgbaBackground.push(target);
+              }
+            }
+          } catch (e) {
+            console.error('Error checking for rgba background:', e);
+          }
         }
         
         // If loading attribute was added (lazy loading)
@@ -761,6 +955,25 @@ function setupDynamicElementObserver() {
       elementsToRecheck.forEach(element => {
         checkAndAddElementWithBackgroundImage(element, newElements);
       });
+    }
+    
+    // Process elements with rgba backgrounds
+    if (newElementsWithRgbaBackground.length > 0) {
+      for (const element of newElementsWithRgbaBackground) {
+        const style = window.getComputedStyle(element);
+        const backgroundColor = style.backgroundColor;
+        
+        if (backgroundColor && backgroundColor.includes('rgba(')) {
+          // Store original background color for restoration if needed
+          if (!element.hasAttribute('data-oiia-original-bg')) {
+            element.setAttribute('data-oiia-original-bg', backgroundColor);
+          }
+          
+          // Remove the background color
+          element.style.backgroundColor = 'transparent';
+        }
+      }
+      console.log(`OIIA: Removed rgba backgrounds from ${newElementsWithRgbaBackground.length} new elements`);
     }
     
     // If we found new elements, process them
@@ -975,6 +1188,9 @@ function replaceElementsWithOIIA() {
   // Remove rgba backgrounds from all elements
   removeRgbaBackgrounds();
   
+  // Start the cat image interval
+  startCatImageInterval();
+  
   // Start playing the OIIA audio
   playOiiaAudio();
   
@@ -1093,6 +1309,9 @@ function disableOIIA() {
   
   // Stop the audio
   stopOiiaAudio();
+  
+  // Stop the cat image interval and remove all cats
+  stopCatImageInterval();
   
   // Remove the body effect
   document.body.classList.remove('oiia-body-effect');
@@ -1494,7 +1713,6 @@ function setupDynamicElementObserver() {
     
     let newElements = [];
     let elementsToRecheck = new Set();
-    let newElementsWithRgbaBackground = [];
     
     // Check each mutation
     mutations.forEach(mutation => {
@@ -1504,32 +1722,6 @@ function setupDynamicElementObserver() {
         mutation.addedNodes.forEach(node => {
           // If it's an element node
           if (node.nodeType === Node.ELEMENT_NODE) {
-            // Check for rgba background
-            try {
-              const style = window.getComputedStyle(node);
-              const backgroundColor = style.backgroundColor;
-              
-              if (backgroundColor && backgroundColor.includes('rgba(') && 
-                  node !== document.body && !node.classList.contains('oiia-body-effect')) {
-                newElementsWithRgbaBackground.push(node);
-              }
-              
-              // Also check all descendants for rgba backgrounds
-              const allDescendants = node.querySelectorAll('*');
-              allDescendants.forEach(descendant => {
-                if (descendant !== document.body && !descendant.classList.contains('oiia-body-effect')) {
-                  const descendantStyle = window.getComputedStyle(descendant);
-                  const descendantBgColor = descendantStyle.backgroundColor;
-                  
-                  if (descendantBgColor && descendantBgColor.includes('rgba(')) {
-                    newElementsWithRgbaBackground.push(descendant);
-                  }
-                }
-              });
-            } catch (e) {
-              console.error('Error checking for rgba backgrounds:', e);
-            }
-            
             // If it's an image, video, iframe, or SVG
             if (node.tagName && ['IMG', 'VIDEO', 'IFRAME', 'SVG'].includes(node.tagName.toUpperCase())) {
               if (!node.getAttribute('data-oiia-processed')) {
@@ -1644,23 +1836,9 @@ function setupDynamicElementObserver() {
           newElements.push(target);
         }
         
-        // If style attribute changed, check for background images and rgba backgrounds
+        // If style attribute changed, check for background images
         if (mutation.attributeName === 'style' || mutation.attributeName === 'class') {
           elementsToRecheck.add(target);
-          
-          // Check for rgba background
-          try {
-            if (target !== document.body && !target.classList.contains('oiia-body-effect')) {
-              const style = window.getComputedStyle(target);
-              const backgroundColor = style.backgroundColor;
-              
-              if (backgroundColor && backgroundColor.includes('rgba(')) {
-                newElementsWithRgbaBackground.push(target);
-              }
-            }
-          } catch (e) {
-            console.error('Error checking for rgba background:', e);
-          }
         }
         
         // If loading attribute was added (lazy loading)
@@ -1675,25 +1853,6 @@ function setupDynamicElementObserver() {
       elementsToRecheck.forEach(element => {
         checkAndAddElementWithBackgroundImage(element, newElements);
       });
-    }
-    
-    // Process elements with rgba backgrounds
-    if (newElementsWithRgbaBackground.length > 0) {
-      for (const element of newElementsWithRgbaBackground) {
-        const style = window.getComputedStyle(element);
-        const backgroundColor = style.backgroundColor;
-        
-        if (backgroundColor && backgroundColor.includes('rgba(')) {
-          // Store original background color for restoration if needed
-          if (!element.hasAttribute('data-oiia-original-bg')) {
-            element.setAttribute('data-oiia-original-bg', backgroundColor);
-          }
-          
-          // Remove the background color
-          element.style.backgroundColor = 'transparent';
-        }
-      }
-      console.log(`OIIA: Removed rgba backgrounds from ${newElementsWithRgbaBackground.length} new elements`);
     }
     
     // If we found new elements, process them
@@ -1719,4 +1878,74 @@ function setupDynamicElementObserver() {
   }, 2000); // Check every 2 seconds
   
   console.log('OIIA: Dynamic element observer set up');
+}
+
+// Function to restore the original state of the page
+function restoreOriginalState() {
+  console.log('OIIA: Restoring original state');
+  
+  // Set the global flag to indicate OIIA mode is inactive
+  oiiaActive = false;
+  
+  // Disconnect the observer if it exists
+  if (domObserver) {
+    domObserver.disconnect();
+    domObserver = null;
+  }
+  
+  // Stop all audio
+  stopOiiaAudio();
+  
+  // Stop the cat image interval and remove all cats
+  stopCatImageInterval();
+  
+  // Remove the strobing gradient background from the body
+  removeBodyEffect();
+  
+  // Restore rgba backgrounds
+  restoreRgbaBackgrounds();
+  
+  // Get all elements with our classes
+  const oiiaElements = document.querySelectorAll('.oiia-image, .oiia-video, .oiia-svg, [data-oiia-processed="true"], .oiia-text-rotate, .oiia-text-rotate-x, .oiia-text-rotate-y, .oiia-text-rotate-z');
+  
+  // For each element, restore the original state
+  for (const element of oiiaElements) {
+    // Remove our classes
+    element.classList.remove('oiia-image', 'oiia-video', 'oiia-svg', 'oiia-text-rotate', 'oiia-text-rotate-x', 'oiia-text-rotate-y', 'oiia-text-rotate-z');
+    
+    // Remove our data attribute
+    element.removeAttribute('data-oiia-processed');
+    
+    // If we saved the original src, restore it
+    if (element.hasAttribute('data-oiia-original-src')) {
+      element.src = element.getAttribute('data-oiia-original-src');
+      element.removeAttribute('data-oiia-original-src');
+    }
+    
+    // If we saved the original srcset, restore it
+    if (element.hasAttribute('data-oiia-original-srcset')) {
+      element.srcset = element.getAttribute('data-oiia-original-srcset');
+      element.removeAttribute('data-oiia-original-srcset');
+    }
+    
+    // If we saved the original background image, restore it
+    if (element.hasAttribute('data-oiia-original-background')) {
+      element.style.backgroundImage = element.getAttribute('data-oiia-original-background');
+      element.removeAttribute('data-oiia-original-background');
+    }
+    
+    // If we saved the original style, restore it
+    if (element.hasAttribute('data-oiia-original-style')) {
+      element.setAttribute('style', element.getAttribute('data-oiia-original-style'));
+      element.removeAttribute('data-oiia-original-style');
+    }
+  }
+  
+  // Remove our style element
+  const styleElement = document.getElementById('oiia-styles');
+  if (styleElement) {
+    styleElement.remove();
+  }
+  
+  console.log('OIIA: Original state restored');
 }
