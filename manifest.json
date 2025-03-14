@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "OIIA Dance Party",
   "version": "1.0.0",
-  "description": "Transform any webpage into a wild dance party! Watch as images, videos, and text elements spin, rotate, and dance across your screen in a chaotic visual celebration. Perfect for livening up boring websites or just having some fun.",
+  "description": "Transform any webpage into a wild dance party! ",
   "action": {
     "default_popup": "public/popup.html",
     "default_icon": {
