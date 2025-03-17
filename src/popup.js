@@ -41,30 +41,24 @@ document.addEventListener('DOMContentLoaded', function() {
         return;
       }
       
-      // First, inject the content script if it's not already there
-      chrome.scripting.executeScript({
-        target: { tabId: activeTab.id },
-        files: ['src/content.js']
-      }, function() {
-        // After ensuring the content script is injected, send the message
-        chrome.tabs.sendMessage(activeTab.id, {
-          action: "replaceWithOIIA"
-        }, function(response) {
-          // Check for error
-          if (chrome.runtime.lastError) {
-            console.error('Error:', chrome.runtime.lastError.message);
-            actionButton.textContent = 'Error';
-            setTimeout(() => { actionButton.textContent = 'OIIA'; }, 1500);
-            return;
-          }
-          
-          // Handle successful response
-          console.log("Replace response:", response);
-          
-          // Update button text and state
-          actionButton.textContent = 'Disable OIIA';
-          oiiaActive = true;
-        });
+      // Send the message directly to the content script (which is already loaded via manifest.json)
+      chrome.tabs.sendMessage(activeTab.id, {
+        action: "replaceWithOIIA"
+      }, function(response) {
+        // Check for error
+        if (chrome.runtime.lastError) {
+          console.error('Error:', chrome.runtime.lastError.message);
+          actionButton.textContent = 'Error';
+          setTimeout(() => { actionButton.textContent = 'OIIA'; }, 1500);
+          return;
+        }
+        
+        // Handle successful response
+        console.log("Replace response:", response);
+        
+        // Update button text and state
+        actionButton.textContent = 'Disable OIIA';
+        oiiaActive = true;
       });
     });
   }

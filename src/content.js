@@ -70,59 +70,94 @@ function injectStyles() {
   // Define the CSS for the rotation animation and strobing background
   styleEl.textContent = `
     @keyframes oiia-rotate-y {
-      0% { transform: rotate3d(0, 1, 0, 0deg); }
-      100% { transform: rotate3d(0, 1, 0, 360deg); }
+      0% { transform: rotate3d(0, 1, 0, 0deg) scale(1); }
+      25% { transform: rotate3d(0, 1, 0, 90deg) scale(1.1); }
+      50% { transform: rotate3d(0, 1, 0, 180deg) scale(0.9); }
+      75% { transform: rotate3d(0, 1, 0, 270deg) scale(1.1); }
+      100% { transform: rotate3d(0, 1, 0, 360deg) scale(1); }
     }
     
     @keyframes oiia-rotate-x {
-      0% { transform: rotate3d(1, 0, 0, 0deg); }
-      100% { transform: rotate3d(1, 0, 0, 360deg); }
+      0% { transform: rotate3d(1, 0, 0, 0deg) scale(1); }
+      25% { transform: rotate3d(1, 0, 0, 90deg) scale(1.1); }
+      50% { transform: rotate3d(1, 0, 0, 180deg) scale(0.95); }
+      75% { transform: rotate3d(1, 0, 0, 270deg) scale(1.05); }
+      100% { transform: rotate3d(1, 0, 0, 360deg) scale(1); }
     }
     
     @keyframes oiia-rotate-z {
-      0% { transform: rotate3d(0, 0, 1, 0deg); }
-      100% { transform: rotate3d(0, 0, 1, 360deg); }
+      0% { transform: rotate3d(0, 0, 1, 0deg) scale(1); }
+      25% { transform: rotate3d(0, 0, 1, 90deg) scale(1.1); }
+      50% { transform: rotate3d(0, 0, 1, 180deg) scale(0.9); }
+      75% { transform: rotate3d(0, 0, 1, 270deg) scale(1.05); }
+      100% { transform: rotate3d(0, 0, 1, 360deg) scale(1); }
     }
     
     @keyframes oiia-rotate-random {
-      0% { transform: rotate3d(1, 1, 1, 0deg); }
-      25% { transform: rotate3d(1, 0.5, 0.3, 90deg); }
-      50% { transform: rotate3d(0.2, 1, 0.4, 180deg); }
-      75% { transform: rotate3d(0.5, 0.2, 1, 270deg); }
-      100% { transform: rotate3d(1, 1, 1, 360deg); }
+      0% { transform: rotate3d(1, 1, 1, 0deg) scale(1); }
+      20% { transform: rotate3d(1, 0.5, 0.3, 72deg) scale(1.15); }
+      40% { transform: rotate3d(0.2, 1, 0.4, 144deg) scale(0.9); }
+      60% { transform: rotate3d(0.5, 0.2, 1, 216deg) scale(1.1); }
+      80% { transform: rotate3d(0.8, 0.8, 0.2, 288deg) scale(0.95); }
+      100% { transform: rotate3d(1, 1, 1, 360deg) scale(1); }
+    }
+    
+    @keyframes oiia-pulse-scale {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.2); }
+      100% { transform: scale(1); }
+    }
+    
+    @keyframes oiia-crazy-scale {
+      0% { transform: scale(1) rotate(0deg); }
+      20% { transform: scale(1.2) rotate(72deg); }
+      40% { transform: scale(0.9) rotate(144deg); }
+      60% { transform: scale(1.1) rotate(216deg); }
+      80% { transform: scale(0.95) rotate(288deg); }
+      100% { transform: scale(1) rotate(360deg); }
     }
     
     .oiia-rotate {
-      animation: oiia-rotate-y 0.3s linear infinite;
+      animation: oiia-rotate-y 0.8s linear infinite;
       transform-style: preserve-3d;
       backface-visibility: visible;
     }
     
     .oiia-text-rotate {
-      animation: oiia-rotate-random 0.5s linear infinite;
+      animation: oiia-rotate-random 1.2s linear infinite;
       transform-style: preserve-3d;
       backface-visibility: visible;
       display: inline-block;
     }
     
     .oiia-text-rotate-x {
-      animation: oiia-rotate-x 0.4s linear infinite;
+      animation: oiia-rotate-x 1s linear infinite;
       transform-style: preserve-3d;
       backface-visibility: visible;
       display: inline-block;
     }
     
     .oiia-text-rotate-y {
-      animation: oiia-rotate-y 0.3s linear infinite;
+      animation: oiia-rotate-y 0.9s linear infinite;
       transform-style: preserve-3d;
       backface-visibility: visible;
       display: inline-block;
     }
     
     .oiia-text-rotate-z {
-      animation: oiia-rotate-z 0.35s linear infinite;
+      animation: oiia-rotate-z 1.1s linear infinite;
       transform-style: preserve-3d;
       backface-visibility: visible;
+      display: inline-block;
+    }
+    
+    .oiia-pulse-scale {
+      animation: oiia-pulse-scale 1.5s ease-in-out infinite;
+      display: inline-block;
+    }
+    
+    .oiia-crazy-scale {
+      animation: oiia-crazy-scale 1.8s linear infinite;
       display: inline-block;
     }
     
@@ -168,10 +203,26 @@ function injectStyles() {
       z-index: 9999 !important;
       pointer-events: none !important;
       transition: all 0.5s ease !important;
-      animation: oiia-rotate-y 0.2s linear infinite !important;
       transform-origin: center center !important;
       max-width: 150px !important;
       max-height: 150px !important;
+    }
+    
+    @keyframes oiia-cat-scale {
+      0% { transform: rotate3d(0, 1, 0, 0deg) scale(1); }
+      20% { transform: rotate3d(0, 1, 0, 72deg) scale(1.8); }
+      40% { transform: rotate3d(0, 1, 0, 144deg) scale(0.5); }
+      60% { transform: rotate3d(0, 1, 0, 216deg) scale(1.6); }
+      80% { transform: rotate3d(0, 1, 0, 288deg) scale(0.7); }
+      100% { transform: rotate3d(0, 1, 0, 360deg) scale(1); }
+    }
+    
+    @keyframes oiia-cat-bounce {
+      0% { transform: scale(1) translateY(0); }
+      25% { transform: scale(1.4) translateY(-20px); }
+      50% { transform: scale(0.8) translateY(0); }
+      75% { transform: scale(1.2) translateY(-10px); }
+      100% { transform: scale(1) translateY(0); }
     }
   `;
   
@@ -209,55 +260,81 @@ function toggleRotation(imgElement) {
 
 // Function to randomly toggle rotation on text elements
 function toggleTextRotation(element) {
-  // Skip if element no longer exists or OIIA is inactive
-  if (!element || !document.body.contains(element) || !oiiaActive) {
-    return;
-  }
-  
-  // Randomly decide whether to rotate or stop
-  const shouldRotate = Math.random() > 0.5;
-  
-  if (shouldRotate) {
-    // Remove any existing rotation classes
-    element.classList.remove('oiia-text-rotate');
-    element.classList.remove('oiia-text-rotate-x');
-    element.classList.remove('oiia-text-rotate-y');
-    element.classList.remove('oiia-text-rotate-z');
-    
-    // Randomly select a rotation type
-    const rotationType = getRandomInt(1, 4);
-    switch (rotationType) {
-      case 1:
-        element.classList.add('oiia-text-rotate-x');
-        break;
-      case 2:
-        element.classList.add('oiia-text-rotate-y');
-        break;
-      case 3:
-        element.classList.add('oiia-text-rotate-z');
-        break;
-      case 4:
-        element.classList.add('oiia-text-rotate');
-        break;
+  try {
+    // Skip if already processed for rotation
+    if (element.getAttribute('data-oiia-rotation-processed') === 'true') {
+      return;
     }
-  } else {
-    // Remove all rotation classes
+    
+    // Mark as processed for rotation
+    element.setAttribute('data-oiia-rotation-processed', 'true');
+    
+    // Apply random animation duration for varied effect
+    const animationDuration = (Math.random() * 0.4 + 0.2).toFixed(2); // Between 0.2s and 0.6s
+    element.style.animationDuration = `${animationDuration}s`;
+    
+    // Randomly choose animation direction
+    if (Math.random() > 0.5) {
+      element.style.animationDirection = 'alternate';
+    }
+    
+    // Apply random transform origin for more chaotic effect
+    const origins = ['center center', 'top left', 'top right', 'bottom left', 'bottom right', 'center top', 'center bottom'];
+    const randomOrigin = origins[Math.floor(Math.random() * origins.length)];
+    element.style.transformOrigin = randomOrigin;
+    
+    // Randomly decide what type of effect to apply
+    const effectType = Math.random();
+    
+    // Remove any existing animation classes
     element.classList.remove('oiia-text-rotate');
     element.classList.remove('oiia-text-rotate-x');
     element.classList.remove('oiia-text-rotate-y');
     element.classList.remove('oiia-text-rotate-z');
+    element.classList.remove('oiia-pulse-scale');
+    element.classList.remove('oiia-crazy-scale');
+    
+    if (effectType < 0.6) { // 60% chance for rotation with scale
+      // Randomly select a rotation type
+      const rotationType = getRandomInt(1, 4);
+      switch (rotationType) {
+        case 1:
+          element.classList.add('oiia-text-rotate-x');
+          break;
+        case 2:
+          element.classList.add('oiia-text-rotate-y');
+          break;
+        case 3:
+          element.classList.add('oiia-text-rotate-z');
+          break;
+        case 4:
+          element.classList.add('oiia-text-rotate');
+          break;
+      }
+    } else if (effectType < 0.8) { // 20% chance for pulse scale
+      element.classList.add('oiia-pulse-scale');
+    } else if (effectType < 0.95) { // 15% chance for crazy scale
+      element.classList.add('oiia-crazy-scale');
+    } // 5% chance for no effect (brief pause)
+    
+    // Store the timeout ID so we can clear it later
+    const timeoutId = setTimeout(() => {
+      toggleTextRotation(element);
+    }, getRandomInt(500, 3000)); // Random interval between 0.5 and 3 seconds
+    
+    // Store the timeout ID on the element for cleanup
+    if (!element.oiiaTextTimeouts) {
+      element.oiiaTextTimeouts = [];
+    }
+    element.oiiaTextTimeouts.push(timeoutId);
+  } catch (e) {
+    console.error('Error toggling text rotation:', e);
   }
-  
-  // Store the timeout ID so we can clear it later
-  const timeoutId = setTimeout(() => {
-    toggleTextRotation(element);
-  }, getRandomInt(500, 3000)); // Random interval between 0.5 and 3 seconds
-  
-  // Store the timeout ID on the element for cleanup
-  if (!element.oiiaTextTimeouts) {
-    element.oiiaTextTimeouts = [];
-  }
-  element.oiiaTextTimeouts.push(timeoutId);
+}
+
+// Helper function to safely check if an element has a class
+function hasClass(element, className) {
+  return element && element.classList && element.classList.contains(className);
 }
 
 // Function to find all SVG elements
@@ -299,7 +376,7 @@ function findAllImageElements() {
       // Skip elements we don't want to process
       if (element.tagName.toLowerCase() === 'html' || 
           element.tagName.toLowerCase() === 'head' ||
-          element.classList.contains('oiia-body-effect') ||
+          hasClass(element, 'oiia-body-effect') ||
           element.getAttribute('data-oiia-processed') === 'true') {
         continue;
       }
@@ -353,10 +430,10 @@ function findAllTextElements() {
         element.tagName.toLowerCase() === 'head' ||
         element.tagName.toLowerCase() === 'script' ||
         element.tagName.toLowerCase() === 'style' ||
-        element.classList.contains('oiia-body-effect') ||
+        hasClass(element, 'oiia-body-effect') ||
         element.getAttribute('data-oiia-processed') === 'true' ||
-        element.classList.contains('oiia-image') ||
-        element.classList.contains('oiia-video-container')) {
+        hasClass(element, 'oiia-image') ||
+        hasClass(element, 'oiia-video-container')) {
       continue;
     }
     
@@ -391,10 +468,10 @@ function findAllHeadings() {
   for (const heading of headings) {
     // Skip headings that have already been processed
     if (heading.getAttribute('data-oiia-processed') === 'true' ||
-        heading.classList.contains('oiia-text-rotate') ||
-        heading.classList.contains('oiia-text-rotate-x') ||
-        heading.classList.contains('oiia-text-rotate-y') ||
-        heading.classList.contains('oiia-text-rotate-z')) {
+        hasClass(heading, 'oiia-text-rotate') ||
+        hasClass(heading, 'oiia-text-rotate-x') ||
+        hasClass(heading, 'oiia-text-rotate-y') ||
+        hasClass(heading, 'oiia-text-rotate-z')) {
       continue;
     }
     
@@ -414,7 +491,7 @@ function processTextElements() {
   console.log(`OIIA: Found ${textElements.length} text elements to process`);
   
   for (const element of textElements) {
-    if (!element.classList.contains('oiia-text-rotate')) {
+    if (!hasClass(element, 'oiia-text-rotate')) {
       // Mark as processed
       element.setAttribute('data-oiia-processed', 'true');
       
@@ -435,10 +512,10 @@ function processHeadings() {
   console.log(`OIIA: Found ${headings.length} heading elements to process`);
   
   for (const element of headings) {
-    if (!element.classList.contains('oiia-text-rotate') && 
-        !element.classList.contains('oiia-text-rotate-x') && 
-        !element.classList.contains('oiia-text-rotate-y') && 
-        !element.classList.contains('oiia-text-rotate-z')) {
+    if (!hasClass(element, 'oiia-text-rotate') && 
+        !hasClass(element, 'oiia-text-rotate-x') && 
+        !hasClass(element, 'oiia-text-rotate-y') && 
+        !hasClass(element, 'oiia-text-rotate-z')) {
       // Mark as processed
       element.setAttribute('data-oiia-processed', 'true');
       
@@ -468,10 +545,10 @@ function processHeadings() {
 
 // Function to manually toggle text rotation on/off for a specific element
 function manualToggleTextRotation(element) {
-  if (element.classList.contains('oiia-text-rotate') || 
-      element.classList.contains('oiia-text-rotate-x') || 
-      element.classList.contains('oiia-text-rotate-y') || 
-      element.classList.contains('oiia-text-rotate-z')) {
+  if (hasClass(element, 'oiia-text-rotate') || 
+      hasClass(element, 'oiia-text-rotate-x') || 
+      hasClass(element, 'oiia-text-rotate-y') || 
+      hasClass(element, 'oiia-text-rotate-z')) {
     // Remove all rotation classes
     element.classList.remove('oiia-text-rotate');
     element.classList.remove('oiia-text-rotate-x');
@@ -518,10 +595,10 @@ function findAllLinksAndButtons() {
   for (const link of allLinks) {
     // Skip links that have already been processed
     if (link.getAttribute('data-oiia-processed') === 'true' ||
-        link.classList.contains('oiia-text-rotate') ||
-        link.classList.contains('oiia-text-rotate-x') ||
-        link.classList.contains('oiia-text-rotate-y') ||
-        link.classList.contains('oiia-text-rotate-z')) {
+        hasClass(link, 'oiia-text-rotate') ||
+        hasClass(link, 'oiia-text-rotate-x') ||
+        hasClass(link, 'oiia-text-rotate-y') ||
+        hasClass(link, 'oiia-text-rotate-z')) {
       continue;
     }
     
@@ -547,10 +624,10 @@ function findAllLinksAndButtons() {
   for (const button of allButtons) {
     // Skip buttons that have already been processed
     if (button.getAttribute('data-oiia-processed') === 'true' ||
-        button.classList.contains('oiia-text-rotate') ||
-        button.classList.contains('oiia-text-rotate-x') ||
-        button.classList.contains('oiia-text-rotate-y') ||
-        button.classList.contains('oiia-text-rotate-z')) {
+        hasClass(button, 'oiia-text-rotate') ||
+        hasClass(button, 'oiia-text-rotate-x') ||
+        hasClass(button, 'oiia-text-rotate-y') ||
+        hasClass(button, 'oiia-text-rotate-z')) {
       continue;
     }
     
@@ -581,10 +658,10 @@ function processLinksAndButtons() {
   console.log(`OIIA: Found ${linksAndButtons.length} links and buttons to process`);
   
   for (const element of linksAndButtons) {
-    if (!element.classList.contains('oiia-text-rotate') && 
-        !element.classList.contains('oiia-text-rotate-x') && 
-        !element.classList.contains('oiia-text-rotate-y') && 
-        !element.classList.contains('oiia-text-rotate-z')) {
+    if (!hasClass(element, 'oiia-text-rotate') && 
+        !hasClass(element, 'oiia-text-rotate-x') && 
+        !hasClass(element, 'oiia-text-rotate-y') && 
+        !hasClass(element, 'oiia-text-rotate-z')) {
       // Mark as processed
       element.setAttribute('data-oiia-processed', 'true');
       
@@ -632,6 +709,25 @@ function addRandomCat() {
     catImage.className = 'oiia-cat-image';
     catImage.style.left = `${left}px`;
     catImage.style.top = `${top}px`;
+    
+    // Apply random animation duration for varied scaling effect
+    const animationDuration = (Math.random() * 0.3 + 0.1).toFixed(2); // Between 0.1s and 0.4s
+    catImage.style.animationDuration = `${animationDuration}s`;
+    
+    // Randomly choose animation direction
+    if (Math.random() > 0.5) {
+      catImage.style.animationDirection = 'alternate';
+    }
+    
+    // Apply random animation type
+    const animations = ['oiia-cat-scale', 'oiia-cat-bounce', 'oiia-crazy-scale', 'oiia-pulse-scale'];
+    const randomAnimation = animations[Math.floor(Math.random() * animations.length)];
+    catImage.style.animation = `${randomAnimation} ${animationDuration}s linear infinite`;
+    
+    // Apply random transform origin for more chaotic effect
+    const origins = ['center center', 'top left', 'top right', 'bottom left', 'bottom right', 'center top', 'center bottom'];
+    const randomOrigin = origins[Math.floor(Math.random() * origins.length)];
+    catImage.style.transformOrigin = randomOrigin;
     
     // Try to get the OIIA image URL with error handling
     let imageUrl = '';
@@ -793,14 +889,14 @@ function setupDynamicElementObserver() {
               const backgroundColor = style.backgroundColor;
               
               if (backgroundColor && backgroundColor.includes('rgba(') && 
-                  node !== document.body && !node.classList.contains('oiia-body-effect')) {
+                  node !== document.body && !hasClass(node, 'oiia-body-effect')) {
                 newElementsWithRgbaBackground.push(node);
               }
               
               // Also check all descendants for rgba backgrounds
               const allDescendants = node.querySelectorAll('*');
               allDescendants.forEach(descendant => {
-                if (descendant !== document.body && !descendant.classList.contains('oiia-body-effect')) {
+                if (descendant !== document.body && !hasClass(descendant, 'oiia-body-effect')) {
                   const descendantStyle = window.getComputedStyle(descendant);
                   const descendantBgColor = descendantStyle.backgroundColor;
                   
@@ -932,7 +1028,7 @@ function setupDynamicElementObserver() {
           
           // Check for rgba background
           try {
-            if (target !== document.body && !target.classList.contains('oiia-body-effect')) {
+            if (target !== document.body && !hasClass(target, 'oiia-body-effect')) {
               const style = window.getComputedStyle(target);
               const backgroundColor = style.backgroundColor;
               
@@ -1007,9 +1103,9 @@ function setupDynamicElementObserver() {
 function checkAndAddElementWithBackgroundImage(element, elementsList) {
   if (!element || !element.nodeType || element.nodeType !== Node.ELEMENT_NODE || 
       element.getAttribute('data-oiia-processed') === 'true' ||
-      element.classList.contains('oiia-image') ||
+      hasClass(element, 'oiia-image') ||
       element.closest('.oiia-image') ||
-      (element.parentNode && element.parentNode.classList.contains('oiia-video-container'))) {
+      (element.parentNode && hasClass(element.parentNode, 'oiia-video-container'))) {
     return;
   }
   
@@ -1019,7 +1115,7 @@ function checkAndAddElementWithBackgroundImage(element, elementsList) {
     // Check for background-image
     if (style.backgroundImage && style.backgroundImage !== 'none' && 
         style.backgroundImage.includes('url(') && 
-        !element.classList.contains('oiia-body-effect')) {
+        !hasClass(element, 'oiia-body-effect')) {
       elementsList.push(element);
       return;
     }
@@ -1092,10 +1188,7 @@ function processNewElements(elements) {
       const tagName = element.tagName.toLowerCase();
       
       // Skip if already processed
-      if (element.getAttribute('data-oiia-processed') === 'true' ||
-          element.classList.contains('oiia-image') ||
-          element.closest('.oiia-image') ||
-          (element.parentNode && element.parentNode.classList.contains('oiia-video-container'))) {
+      if (element.getAttribute('data-oiia-processed') === 'true') {
         return;
       }
       
@@ -1114,7 +1207,7 @@ function processNewElements(elements) {
         const style = window.getComputedStyle(element);
         if (style.backgroundImage && style.backgroundImage !== 'none' && 
             style.backgroundImage.includes('url(') && 
-            !element.classList.contains('oiia-body-effect')) {
+            !hasClass(element, 'oiia-body-effect')) {
           processBackgroundImage(element);
         }
       }
@@ -1133,7 +1226,7 @@ function removeRgbaBackgrounds() {
   // Check each element for rgba background
   for (const element of allElements) {
     // Skip the body element as it has our special effect
-    if (element === document.body || element.classList.contains('oiia-body-effect')) {
+    if (element === document.body || hasClass(element, 'oiia-body-effect')) {
       continue;
     }
     
@@ -1270,7 +1363,7 @@ function replaceElementsWithOIIA() {
     // Skip non-image elements and already processed elements
     if (element.tagName.toLowerCase() !== 'img' || 
         element.getAttribute('data-oiia-processed') === 'true' ||
-        element.classList.contains('oiia-image')) {
+        hasClass(element, 'oiia-image')) {
       continue;
     }
     
@@ -1446,7 +1539,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 // Function to process an image element
 function processImage(imgElement) {
   // Skip if this is already an OIIA image or has been processed
-  if (imgElement.classList.contains('oiia-image') || 
+  if (hasClass(imgElement, 'oiia-image') || 
       imgElement.getAttribute('data-oiia-processed') === 'true') {
     return false;
   }
@@ -1504,7 +1597,7 @@ function processImage(imgElement) {
 // Function to process a video or iframe element
 function processVideoOrIframe(element) {
   // Skip if this video already has an OIIA overlay
-  if (element.parentNode.classList.contains('oiia-video-container') ||
+  if (element.parentNode && hasClass(element.parentNode, 'oiia-video-container') ||
       element.getAttribute('data-oiia-processed') === 'true') {
     return false;
   }
